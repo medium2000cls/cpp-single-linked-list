@@ -45,7 +45,8 @@ class SingleLinkedList
         
         [[nodiscard]] bool operator!=(const BasicIterator<const Type>& rhs) const noexcept
         {
-            return (this->node_) != rhs.node_;
+            //Изменил != на == с отрицанием
+            return !((this->node_) == rhs.node_);
         }
         
         [[nodiscard]] bool operator==(const BasicIterator<Type>& rhs) const noexcept
@@ -55,7 +56,8 @@ class SingleLinkedList
         
         [[nodiscard]] bool operator!=(const BasicIterator<Type>& rhs) const noexcept
         {
-            return (this->node_) != rhs.node_;
+            //Изменил != на == с отрицанием
+            return !((this->node_) == rhs.node_);
         }
         
         BasicIterator& operator++() noexcept
@@ -104,11 +106,8 @@ public:
     
     [[nodiscard]] Iterator end() noexcept
     {
-        Iterator it = begin();
-        for (size_t i = 0; i < size_; ++i) {
-            ++it;
-        }
-        return it;
+        //Итератор на nullptr
+        return Iterator{nullptr};
     }
     
     [[nodiscard]] ConstIterator begin() const noexcept
@@ -129,11 +128,8 @@ public:
     
     [[nodiscard]] ConstIterator cend() const noexcept
     {
-        ConstIterator it = begin();
-        for (size_t i = 0; i < size_; ++i) {
-            ++it;
-        }
-        return it;
+        //Итератор на nullptr
+        return Iterator{nullptr};
     }
     
     
@@ -173,18 +169,21 @@ public:
     
     SingleLinkedList(const SingleLinkedList& other)
     {
-        SingleLinkedList tmp;
-        SingleLinkedList single_linked_list;
-        
-        ConstIterator it_other = other.begin();
-        while (it_other != other.end()) {
-            tmp.PushFront(*it_other);
-            ++it_other;
+        if (other.IsEmpty()) {
+            size_ = 0;
+            return;
         }
-        ConstIterator it_tmp = tmp.begin();
-        while (it_tmp != tmp.end()) {
-            single_linked_list.PushFront(*it_tmp);
-            ++it_tmp;
+        //Изменил конструктор, теперь он заполняет контейнер в один проход.
+        ConstIterator it_other = other.begin();
+        SingleLinkedList single_linked_list;
+        Node* it_tail = new Node();
+        single_linked_list.head_.next_node = it_tail;
+        
+        while (it_other != other.end()) {
+            it_tail->value = *it_other;
+            it_tail->next_node = it_other->next_node != nullptr ? new Node() : nullptr;
+            it_tail = it_tail->next_node;
+            ++it_other;
         }
         SingleLinkedList::swap(single_linked_list);
     }
@@ -267,6 +266,9 @@ public:
      */
     Iterator InsertAfter(ConstIterator pos, const Type& value)
     {
+        if(pos == end()) {
+            throw std::invalid_argument("Iterator does not have to be end()");
+        }
         Node* node = pos.node_;
         node->next_node = new Node(value, node->next_node);
         ++size_;
@@ -279,6 +281,9 @@ public:
      */
     Iterator EraseAfter(ConstIterator pos) noexcept
     {
+        if(pos == end()) {
+            throw std::invalid_argument("Iterator does not have to be end()");
+        }
         Node* p_node = pos.node_->next_node;
         pos.node_->next_node = p_node->next_node;
         --size_;
@@ -289,11 +294,10 @@ public:
     void Clear() noexcept
     {
         while (head_.next_node != nullptr) {
-            Node* node = head_.next_node;
-            head_.next_node = node->next_node;
+            //Использовал библиотечную функцию exchange
+            Node* node = std::exchange(head_.next_node, head_.next_node->next_node);
             delete node;
         }
-        size_ = 0;
     }
     
     void swap(SingleLinkedList& other) noexcept
