@@ -176,13 +176,12 @@ public:
         //Изменил конструктор, теперь он заполняет контейнер в один проход.
         ConstIterator it_other = other.begin();
         SingleLinkedList single_linked_list;
-        Node* it_tail = new Node();
-        single_linked_list.head_.next_node = it_tail;
+        Node* it_tail = &single_linked_list.head_;
         
         while (it_other != other.end()) {
-            it_tail->value = *it_other;
-            it_tail->next_node = it_other->next_node != nullptr ? new Node() : nullptr;
+            it_tail->next_node = new Node(*it_other, nullptr);
             it_tail = it_tail->next_node;
+            ++single_linked_list.size_;
             ++it_other;
         }
         SingleLinkedList::swap(single_linked_list);
@@ -295,9 +294,10 @@ public:
     {
         while (head_.next_node != nullptr) {
             //Использовал библиотечную функцию exchange
-            Node* node = std::exchange(head_.next_node, head_.next_node->next_node);
-            delete node;
+            delete std::exchange(head_.next_node, head_.next_node->next_node);
+            
         }
+        size_ = 0;
     }
     
     void swap(SingleLinkedList& other) noexcept
